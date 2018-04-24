@@ -1,0 +1,46 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.login.example</groupId>
+    <artifactId>com.login.parent</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+  </parent>
+  <artifactId>admin-login-microservice</artifactId>
+  
+  
+  <!-- 为了使用公共的common-login配置，我这里引入login-gateway-microserivce的依赖 -->
+  <dependencies>
+  		<dependency>
+  				  <groupId>com.login.example</groupId>
+  				   <artifactId>login-gateway-microservice</artifactId>
+  				   <version>${project.version}</version>
+  		</dependency>
+  		<!-- 引入mybatis的依赖 -->
+         <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+	    <!-- 加入mysql的依赖 -->
+	    <dependency>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<!-- 加入spring的jdbc的依赖，我想弄明白的是：这个依赖的作用是啥？？？？，这个依赖不应该属于springboot的默认提供的依赖吗？？？ --> 
+		<dependency>
+	    	<groupId>org.springframework</groupId>
+	    	<artifactId>spring-jdbc</artifactId>
+		</dependency>
+		<!-- 引入阿里巴巴Druid连接池依赖 -->
+		<dependency>
+		    <groupId>com.alibaba</groupId>
+		    <artifactId>druid</artifactId>
+		    <version>1.0.29</version>
+		</dependency>
+  		<dependency>
+		    <groupId>commons-io</groupId>
+		    <artifactId>commons-io</artifactId>
+		</dependency>
+  </dependencies>
+</project>
