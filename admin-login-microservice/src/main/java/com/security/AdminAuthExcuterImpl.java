@@ -17,6 +17,10 @@ public class AdminAuthExcuterImpl implements AuthenticationCommonExcuter {
 		// 把前台传来的密码进行加密，并把加密后的和库中的进行比对
 		String passwdToken = (String) token.getCredentials();// 获取密码
 		// 进行MD5加密
+		//由于FrontEnd传来的是md5加密后的密码，所以
+		//这里要手动地进行Md5加密进行immulate
+		passwdToken  = MD5.getMD5(passwdToken);
+		//MD5.getMD5(cAccount.getUserPwd() + "_" + salt)
 		String encodedPresentedPwd = MD5.getMD5(passwdToken + "_" + accountDetail.getSalt());
 		//把加密后的密码打印出来
 		System.out.println("加密后的密码是："+encodedPresentedPwd);
