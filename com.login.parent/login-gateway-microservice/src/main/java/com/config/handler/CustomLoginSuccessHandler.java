@@ -38,7 +38,7 @@ public class CustomLoginSuccessHandler implements AuthenticationSuccessHandler {
 	   	   //以便于让其保存到cookie中
 		       
 		   //objectMapper.writeValue(response.getWriter(), "Yayy you logged in!");
-		   objectMapper.writeValue(response.getWriter(), authentication.getCredentials()+authentication.getPrincipal().toString());
+		   objectMapper.writeValue(response.getWriter(), "恭喜您登录成功"+authentication.getCredentials()+authentication.getPrincipal().toString());
 	}
 
 }
