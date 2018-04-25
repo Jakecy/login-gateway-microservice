@@ -1,0 +1,8 @@
+ #配置Redis
+   # Redis Config
+#spring: 
+ # cache:
+ #     type: redis
+ #   redis:
+  #    host: localhost
+  #    port: 6379
