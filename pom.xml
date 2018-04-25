@@ -88,8 +88,13 @@
 		    <version>2.5</version>
 		    <scope>provided</scope>
 		</dependency>
+		
+		<!-- 整合Redis -->
+		<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
 	</dependencies>
-	
 	<!-- 编译插件 -->
 	<build>
 		<sourceDirectory>${basedir}/src/main/java</sourceDirectory>
@@ -138,5 +143,6 @@
 	</build>
 	<modules>
 		<module>login-gateway-microservice</module>
+		<module>admin-login-microservice</module>
 	</modules>
 </project>
