@@ -56,7 +56,7 @@
 		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-commons</artifactId>
-			<!-- 引入dayu-redis时需要替换成1.13。0版 -->
+			<!-- 需要替换成1.13。0版 -->
 			<version>1.13.0.RELEASE</version>
 		</dependency>
   </dependencies>

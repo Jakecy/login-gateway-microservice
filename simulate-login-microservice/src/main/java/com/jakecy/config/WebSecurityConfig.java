@@ -4,9 +4,13 @@ package com.jakecy.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jakecy.config.authProvider.CustomAuthenticationProvider;
+import com.jakecy.config.dto.AccountDetail;
 import com.jakecy.config.filter.RequestBodyReaderAuthenticationFilter;
 import com.jakecy.config.handler.CustomLoginSuccessHandler;
 import com.jakecy.config.handler.CustomloginFailureHandler;
+import com.jakecy.config.utils.RandomUtil;
+import com.jakecy.utils.IRedisUtil;
+import com.jakecy.utils.RedisUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.security.Http401AuthenticationEntryPoint;
@@ -18,9 +22,13 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.HttpRequestResponseHolder;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import javax.servlet.http.HttpServletRequest;
@@ -53,6 +61,14 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
    private CustomLoginSuccessHandler  successHandler;
    @Autowired
    private CustomloginFailureHandler  failureHandler;
+   @Autowired
+   private RedisUtil				redisUtil;
+   
+   @Autowired
+   private IRedisUtil			iRedisUtil;
+   
+   private Integer mobileTimeout;
+   private static final Integer LOGIN_TIMEOUT = 86400; // 单位秒 60*60*24  86400
 	
 	
    @Bean
@@ -104,14 +120,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
            .authorizeRequests()
 		   .antMatchers("/login**").permitAll()
 
-//           .and()
-//           .formLogin()
-//           .loginProcessingUrl("/login")
-//           .usernameParameter("login")
-//           .passwordParameter("password")
-//           .successHandler(this::loginSuccessHandler)
-//           .failureHandler(this::loginFailureHandler)
-
            .and()
            .addFilterBefore(
                authenticationFilter(),
@@ -123,8 +131,81 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
            .and()
            .exceptionHandling()
            .authenticationEntryPoint(new Http401AuthenticationEntryPoint("401"));
+       
+          //在这里增加配置，让其拦截所有的接口请求
+         //校验每一个接口是否携带token,如果没有携带token就返回403
+       http.securityContext().securityContextRepository(new SecurityContextRepository() {
+			@Override
+			public SecurityContext loadContext(HttpRequestResponseHolder requestResponseHolder) {
+				SecurityContext context = SecurityContextHolder.createEmptyContext();
+				String tokenStr = requestResponseHolder.getRequest().getHeader("token");
+				if (tokenStr == null) {
+					tokenStr = requestResponseHolder.getRequest().getParameter("_token");
+				}
+				if (tokenStr != null && !tokenStr.trim().equals("undefined") && !tokenStr.trim().equals("")) {
+					Object obj = iRedisUtil.getObject("custom_login_context_" + tokenStr);
+					if (obj != null) {
+						context = (SecurityContext) obj;
+                       flushTokenValid(tokenStr);
+					}
+				} else {
+					requestResponseHolder.getResponse().setHeader("token", RandomUtil.uuid());
+				}
+				return context;
+			}
+
+			@Override
+			public void saveContext(SecurityContext context, HttpServletRequest request, HttpServletResponse response) {
+				Authentication authentication = context.getAuthentication();
+				if (authentication != null) {
+					String token = response.getHeader("token");
+					if (token == null) {
+						token = request.getParameter("_token");
+					}
+					Object obj = authentication.getPrincipal();
+					if (obj != null && token != null) {
+						if (obj instanceof AccountDetail) {
+							AccountDetail accountDetail = (AccountDetail) obj;
+                           saveToken(token, context, accountDetail);
+							SecurityContextHolder.getContext().setAuthentication(context.getAuthentication());
+						}
+					}
+				}
+			}
+
+			@Override
+			public boolean containsContext(HttpServletRequest request) {
+				String tokenStr = request.getHeader("token");
+				if (tokenStr == null) {
+					tokenStr = request.getParameter("_token");
+				}
+				if (tokenStr != null && !tokenStr.trim().equals("undefined")) {
+					Object obj = redisUtil.get("custom_login_token_" + tokenStr);
+					if (obj != null) {
+                       flushTokenValid(tokenStr);
+						return true;
+					}
+				}
+				return false;
+			}
+		});
+	}
+
+	private void saveToken(String token, SecurityContext context, AccountDetail accountDetail){
+		iRedisUtil.setObject("custom_login_context_" + token, context);
+		redisUtil.set("custom_login_token_" + token, accountDetail+ "");
+       flushTokenValid(token);
+	}
+
+	private void flushTokenValid(String token){
+       if (mobileTimeout != null) {
+           iRedisUtil.expire("login_context_" + token, mobileTimeout);
+       }else {
+           iRedisUtil.expire("login_context_" + token, LOGIN_TIMEOUT);
+       }
+       redisUtil.expire("login_token_" + token, LOGIN_TIMEOUT);
    }
-   
+
    
    /**
     * 此处增加一个安全配置方法
